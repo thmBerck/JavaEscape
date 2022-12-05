@@ -10,17 +10,16 @@ import org.w3c.dom.Text;
 import java.util.HashMap;
 
 public class Character {
-    private Texture textureFront = new Texture(Gdx.files.internal("frontside.gif"));
-    private Texture textureBehind = new Texture(Gdx.files.internal("backside.gif"));
-    private Texture textureLeft = new Texture(Gdx.files.internal("leftview.gif"));
-    private Texture textureRight = new Texture(Gdx.files.internal("rightview.gif"));
+    private final Texture textureFront = new Texture(Gdx.files.internal("Character/frontside.gif"));
+    private final Texture textureBehind = new Texture(Gdx.files.internal("Character/backside.gif"));
+    private final Texture textureLeft = new Texture(Gdx.files.internal("Character/leftview.gif"));
+    private final Texture textureRight = new Texture(Gdx.files.internal("Character/rightview.gif"));
 
     private int x;
     private int y;
     int xSpeed;
     int ySpeed;
-    public Character(int charSpeedX, int charSpeedY)
-    {
+    public Character(int charSpeedX, int charSpeedY) {
         this.xSpeed = charSpeedX;
         this.ySpeed = charSpeedY;
     }
@@ -29,26 +28,28 @@ public class Character {
     }
 
     public void moveNorth(SpriteBatch batch) {
-        if(y+ySpeed < Gdx.graphics.getHeight() - 150)
+        if(y+ySpeed < Gdx.graphics.getHeight() - 150) {
             y += ySpeed;
+        }
         batch.draw(textureBehind, x, y);
-
-
     }
     public void moveSouth(SpriteBatch batch) {
-        if(y-ySpeed > -70)
+        if(y-ySpeed > -70) {
             y -= ySpeed;
+        }
         batch.draw(textureFront, x, y);
     }
     public void moveWest(SpriteBatch batch) {
-        if(x-xSpeed > -50)
+        if(x-xSpeed > -50) {
             x -= xSpeed;
+        }
         batch.draw(textureLeft, x, y);
 
     }
     public void moveEast(SpriteBatch batch) {
-        if(x+xSpeed < Gdx.graphics.getWidth() -250)
+        if(x+xSpeed < Gdx.graphics.getWidth() - 250) {
             x += xSpeed;
+        }
         batch.draw(textureRight, x, y);
     }
 
