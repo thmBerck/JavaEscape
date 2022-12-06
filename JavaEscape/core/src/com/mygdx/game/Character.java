@@ -10,10 +10,16 @@ import org.w3c.dom.Text;
 import java.util.HashMap;
 
 public class Character {
+    enum GameRooms {ONE, TWO, THREE}
+    private GameRooms gameState;
     private final Texture textureFront = new Texture(Gdx.files.internal("Character/frontside.gif"));
     private final Texture textureBehind = new Texture(Gdx.files.internal("Character/backside.gif"));
     private final Texture textureLeft = new Texture(Gdx.files.internal("Character/leftview.gif"));
     private final Texture textureRight = new Texture(Gdx.files.internal("Character/rightview.gif"));
+    private final int width = 285;
+    private final int height = 280;
+
+    private final CollisionRect collisionRect = new CollisionRect(this.x, this.y, width, height);
 
     private int x;
     private int y;
@@ -32,18 +38,21 @@ public class Character {
             y += ySpeed;
         }
         batch.draw(textureBehind, x, y);
+        collisionRect.move(x, y);
     }
     public void moveSouth(SpriteBatch batch) {
         if(y-ySpeed > -70) {
             y -= ySpeed;
         }
         batch.draw(textureFront, x, y);
+        collisionRect.move(x, y);
     }
     public void moveWest(SpriteBatch batch) {
         if(x-xSpeed > -50) {
             x -= xSpeed;
         }
         batch.draw(textureLeft, x, y);
+        collisionRect.move(x, y);
 
     }
     public void moveEast(SpriteBatch batch) {
@@ -51,6 +60,7 @@ public class Character {
             x += xSpeed;
         }
         batch.draw(textureRight, x, y);
+        collisionRect.move(x, y);
     }
 
 
@@ -64,4 +74,21 @@ public class Character {
     {
         return y;
     }
+    public CollisionRect getCollisionRect()
+    {
+        return collisionRect;
+    }
+
+    public GameRooms getGameState()
+    {
+        return gameState;
+    }
+
+    public void setGameState(GameRooms gameState)
+    {
+        this.gameState = gameState;
+    }
+
+
+
 }

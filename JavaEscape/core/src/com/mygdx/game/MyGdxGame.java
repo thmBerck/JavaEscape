@@ -6,70 +6,153 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import org.w3c.dom.Text;
+import org.w3c.dom.css.Rect;
+
+import java.awt.*;
+
+import static com.badlogic.gdx.Gdx.gl;
 
 public class MyGdxGame extends ApplicationAdapter {
 	private Sound sound;
-	private Texture background;
+	private Texture background1,background2;
 	private Character character;
+	private Cat cat;
 	private SpriteBatch batch;
-
-	private Texture cat;
 	private Stage stage;
 	private Skin skin;
-	private Dialog dialog;
-	private static float GAME_WIDTH;
-	private static float GAME_HEIGHT;
-	private boolean gameState;
+	public static float GAME_WIDTH;
+	public static float GAME_HEIGHT;
+	private boolean ableToMove;
+	private CollisionRect collisionRectRoom2;
+
+	private Dialog endDialog, statDialog;
+
+	private long startTime, totalTime;
+	private String time;
+
 
 	@Override
 	public void create () {
+		//Game width and height to use for Actor and Texture positioning.
 		GAME_WIDTH = Gdx.graphics.getWidth();
 		GAME_HEIGHT = Gdx.graphics.getHeight();
+
+		//Creation of the batch, stage and skin that will be the base of the whole game.
 		batch = new SpriteBatch();
 		stage = new Stage(new ScreenViewport());
 		skin = new Skin(Gdx.files.internal("Scene2D/uiskin.json"));
-
 		Gdx.input.setInputProcessor(stage);
 
-		//Background
-		background = new Texture(Gdx.files.internal("Background/background.jpg"));
+		//CollisionRect for the room 2 mini-game.
+		collisionRectRoom2 = new CollisionRect(600, 200, 200, 200);
+
+		//Backgrounds
+		background1 = new Texture(Gdx.files.internal("Background/background.jpg"));
+		background2 = new Texture(Gdx.files.internal("Background/background2.jpg"));
 
 		//The cat
-		cat = new Texture(Gdx.files.internal("Cat/cat.png"));
+		cat = new Cat();
 
 		//Main character
 		character = new Character(5, 5);
+		character.setGameState(Character.GameRooms.ONE);
 
 		//startup sound
 		sound = Gdx.audio.newSound(Gdx.files.internal("Background/game-start.mp3"));
 		sound.play(10);
 
-		//Graphics (scene2d)
+		//Graphics (Scene2D)
 
+		//Textbutton "JavaEscape - Click here to start."
 		final TextButton textButton = new TextButton("JavaEscape - Click here to start.", skin, "default");
 		textButton.setSize(500, 100);
 		textButton.setPosition(GAME_WIDTH/2- textButton.getWidth()/2, GAME_HEIGHT/2);
-
-		final Dialog dialog = new Dialog("Clicked Message", skin, "default");
-		dialog.setSize(100, 100);
-		dialog.setPosition(150, 200);
-
 		stage.addActor(textButton);
 
+		//First Dialog "JavaEscape - Escape the room!"
+		final Dialog dialog = new Dialog("JavaEscape - Escape the room!", skin, "default");
+		dialog.setSize(650, 280);
+		dialog.setPosition(GAME_WIDTH/2-dialog.getWidth()/2, 300);
+		dialog.getContentTable().add(createTable(skin));
+		dialog.button("GO!");
+
+		//catDialog
+		cat.createDialog(stage, skin);
+
+		//End Dialog "You won the game"
+		endDialog = new Dialog("You won the game! You found the hidden key! Congratulations.", skin);
+		endDialog.hide();
+		endDialog.button("Let me see the stats!");
+		stage.addActor(endDialog);
+
+		//Statistics Dialog
+		statDialog = new Dialog("Here are you statistics.", skin);
+		statDialog.hide();
+		statDialog.button("Ok");
+		stage.addActor(statDialog);
+
+		//Listeners
+		dialog.getButtonTable().addListener(new ClickListener() {
+			public void clicked(InputEvent event, float x, float y) {
+				ableToMove = true;
+				startTime = System.currentTimeMillis();
+			}
+		});
 		textButton.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
-				dialog.show(stage);
-				gameState = true;
+				textButton.remove();
+				stage.addActor(dialog);
 			}
 		});
+		endDialog.getButtonTable().addListener(new ClickListener() {
+			public void clicked(InputEvent event, float x, float y) {
+				totalTime = System.currentTimeMillis() - startTime;
+				System.out.println(totalTime);
+				time = "Time to complete the game: " + totalTime/60000 + "m " + (totalTime/1000) + "s";
+				statDialog.text(time);
+				statDialog.setSize(650, 400);
+				statDialog.show(stage);
+			}
+		});
+		statDialog.getButtonTable().addListener(new ClickListener() {
+			public void clicked(InputEvent event, float x, float y) {
+				System.exit(0);
+			}
+		});
+	}
+	public Table createTable(Skin skin) {
+		Table table = new Table(skin);
+		table.add(new Label("Hello!", skin));
+		table.row();
+		table.add(new Label("I am Thomas, the creator of the game.", skin) );
+		table.row();
+		table.add(new Label("The goal of the game is to escape the rooms.", skin));
+		table.row();
+		table.add(new Label("You will find clues and items scattered around the room that will help you escape.", skin));
+		table.row();
+		table.add(new Label("The first room is simple, just to get you into the feeling of the game.", skin));
+		table.row();
+		table.row();
+		table.add(new Label("Controls: ", skin));
+		table.row();
+		table.add(new Label("W A S D to move. E to interact with something on your path, like a cat. :) ", skin));
+		table.row();
+		table.add(new Label("Press the button 'GO!' to start the game.", skin));
+
+		return table;
 	}
 	@Override
 	public void resize(int width, int height) {
@@ -82,40 +165,58 @@ public class MyGdxGame extends ApplicationAdapter {
 	 */
 	@Override
 	public void render () {
-		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		gl.glClearColor(1, 1, 1, 1);
+		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		batch.begin();
 
 		//Background
-		batch.begin();
-		batch.draw(background,0,0);
-		batch.draw(background, 0, 360);
-		batch.draw(background,546,0);
-		batch.draw(background,546,360);
+		if(character.getGameState() == Character.GameRooms.ONE) {
+			batch.draw(background1,0,0);
+			batch.draw(background1, 0, 360);
+			batch.draw(background1,546,0);
+			batch.draw(background1,546,360);
+		}
+		if(character.getGameState() == Character.GameRooms.TWO) {
+			batch.draw(background2, 0, 0);
+			batch.draw(background2, 0, 360);
+			batch.draw(background2, 546, 0);
+			batch.draw(background2, 546, 360);
 
-
+		}
+		if(cat.isDialogState()) {
+			character.setGameState(Character.GameRooms.TWO);
+		}
 		//Cat
-		batch.draw(cat, 300, 500, 115, 115);
+		batch.draw(cat, cat.getX(), cat.getY(), cat.getWidth(), cat.getHeight());
 
-		//Graphics scene2d
-
-
-		//Character movement
-		if(Gdx.input.isKeyPressed(Input.Keys.W) && gameState){
+		//Character movement & interaction
+		if(Gdx.input.isKeyPressed(Input.Keys.W) && ableToMove){
 			character.moveNorth(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.S)&& gameState){
+		else if(Gdx.input.isKeyPressed(Input.Keys.S)&& ableToMove){
 			character.moveSouth(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.D)&& gameState){
+		else if(Gdx.input.isKeyPressed(Input.Keys.D)&& ableToMove){
 			character.moveEast(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.A)&& gameState){
+		else if(Gdx.input.isKeyPressed(Input.Keys.A)&& ableToMove){
 			character.moveWest(batch);
+		}
+		else if(Gdx.input.isKeyPressed(Input.Keys.E) && ableToMove) {
+			if(character.getGameState() == Character.GameRooms.ONE) {
+				if(character.getCollisionRect().collidesWith(cat.getCollisionRect())) {
+					cat.getCatDialog().show(stage);
+				}
+			}
+			else if(character.getGameState() == Character.GameRooms.TWO) {
+				if(character.getCollisionRect().collidesWith(collisionRectRoom2)) {
+					endDialog.show(stage);
+				}
+			}
 		}
 		else{
 			character.drawCharacter(batch);
 		}
-
 		batch.end();
 		stage.act(Gdx.graphics.getDeltaTime());
 		stage.draw();
@@ -124,7 +225,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	@Override
 	public void dispose () {
 		batch.dispose();
-		background.dispose();
+		background1.dispose();
 		sound.dispose();
 		stage.dispose();
 	}
