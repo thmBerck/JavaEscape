@@ -1,6 +1,7 @@
 package com.mygdx.game;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -20,7 +21,8 @@ public class Cat extends Texture {
     private TextButton buttondialogOptionA, buttondialogOptionB;
 
     private final CollisionRect collisionRect = new CollisionRect(x, y, width, height);
-
+    private final Sound catSound = Gdx.audio.newSound(Gdx.files.internal("Cat/catSound.mp3"));
+    private final Sound catSound2 = Gdx.audio.newSound(Gdx.files.internal("Cat/catSound2.mp3"));
     private boolean dialogState;
 
     public Cat()
@@ -34,7 +36,6 @@ public class Cat extends Texture {
         buttondialogOptionA = new TextButton("Feed him", skin);
         buttondialogOptionB = new TextButton("Ignore him", skin);
         catDialog.getButtonTable().add(buttondialogOptionA, buttondialogOptionB);
-
         catDialogOptionA = new Dialog("CAT: Thank you, let's go to the next room!", skin);
         catDialogOptionA.button("OK!");
 
@@ -47,6 +48,7 @@ public class Cat extends Texture {
         buttondialogOptionA.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
+                catSound2.play(5);
                 catDialog.remove();
                 buttondialogOptionA.remove();
                 buttondialogOptionB.remove();
@@ -102,8 +104,8 @@ public class Cat extends Texture {
         return collisionRect;
     }
 
-    public Dialog getCatDialogRoom2()
+    public Sound getCatSound()
     {
-        return catDialogRoom2;
+        return catSound;
     }
 }

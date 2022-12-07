@@ -2,6 +2,7 @@ package com.mygdx.game;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -15,17 +16,21 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.utils.Json;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import org.w3c.dom.Text;
 import org.w3c.dom.css.Rect;
 
 import java.awt.*;
+import java.io.*;
+import java.util.Random;
 
+import static com.badlogic.gdx.Gdx.files;
 import static com.badlogic.gdx.Gdx.gl;
 
 public class MyGdxGame extends ApplicationAdapter {
-	private Sound sound;
+	private Sound startupSound;
 	private Texture background1,background2;
 	private Character character;
 	private Cat cat;
@@ -34,17 +39,22 @@ public class MyGdxGame extends ApplicationAdapter {
 	private Skin skin;
 	public static float GAME_WIDTH;
 	public static float GAME_HEIGHT;
-	private boolean ableToMove;
 	private CollisionRect collisionRectRoom2;
 
 	private Dialog endDialog, statDialog;
 
 	private long startTime, totalTime;
 	private String time;
+	private GameState gameState;
 
+	private Random random = new Random();
 
 	@Override
 	public void create () {
+		// GameState
+		gameState = new GameState();
+		gameState.setGameState(GameState.GameRooms.ONE);
+		gameState.setStartMovingPerms(false);
 		//Game width and height to use for Actor and Texture positioning.
 		GAME_WIDTH = Gdx.graphics.getWidth();
 		GAME_HEIGHT = Gdx.graphics.getHeight();
@@ -56,7 +66,7 @@ public class MyGdxGame extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(stage);
 
 		//CollisionRect for the room 2 mini-game.
-		collisionRectRoom2 = new CollisionRect(600, 200, 200, 200);
+		collisionRectRoom2 = new CollisionRect(random.nextInt(1000), random.nextInt(650), 5, 5);
 
 		//Backgrounds
 		background1 = new Texture(Gdx.files.internal("Background/background.jpg"));
@@ -65,13 +75,14 @@ public class MyGdxGame extends ApplicationAdapter {
 		//The cat
 		cat = new Cat();
 
+
 		//Main character
 		character = new Character(5, 5);
-		character.setGameState(Character.GameRooms.ONE);
+		gameState.setGameState(GameState.GameRooms.ONE);
 
 		//startup sound
-		sound = Gdx.audio.newSound(Gdx.files.internal("Background/game-start.mp3"));
-		sound.play(10);
+		startupSound = Gdx.audio.newSound(Gdx.files.internal("Background/game-start.mp3"));
+		startupSound.play(10);
 
 		//Graphics (Scene2D)
 
@@ -103,10 +114,11 @@ public class MyGdxGame extends ApplicationAdapter {
 		statDialog.button("Ok");
 		stage.addActor(statDialog);
 
+
 		//Listeners
 		dialog.getButtonTable().addListener(new ClickListener() {
 			public void clicked(InputEvent event, float x, float y) {
-				ableToMove = true;
+				gameState.setStartMovingPerms(true);
 				startTime = System.currentTimeMillis();
 			}
 		});
@@ -132,6 +144,7 @@ public class MyGdxGame extends ApplicationAdapter {
 				System.exit(0);
 			}
 		});
+
 	}
 	public Table createTable(Skin skin) {
 		Table table = new Table(skin);
@@ -169,14 +182,14 @@ public class MyGdxGame extends ApplicationAdapter {
 		gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 		batch.begin();
 
-		//Background
-		if(character.getGameState() == Character.GameRooms.ONE) {
+		//Backgrounds for Rooms
+		if(gameState.getGameState() == GameState.GameRooms.ONE) {
 			batch.draw(background1,0,0);
 			batch.draw(background1, 0, 360);
 			batch.draw(background1,546,0);
 			batch.draw(background1,546,360);
 		}
-		if(character.getGameState() == Character.GameRooms.TWO) {
+		if(gameState.getGameState() == GameState.GameRooms.TWO) {
 			batch.draw(background2, 0, 0);
 			batch.draw(background2, 0, 360);
 			batch.draw(background2, 546, 0);
@@ -184,31 +197,32 @@ public class MyGdxGame extends ApplicationAdapter {
 
 		}
 		if(cat.isDialogState()) {
-			character.setGameState(Character.GameRooms.TWO);
+			gameState.setGameState(GameState.GameRooms.TWO);
 		}
 		//Cat
 		batch.draw(cat, cat.getX(), cat.getY(), cat.getWidth(), cat.getHeight());
 
 		//Character movement & interaction
-		if(Gdx.input.isKeyPressed(Input.Keys.W) && ableToMove){
+		if(Gdx.input.isKeyPressed(Input.Keys.W) && gameState.isStartMovingPerms()){
 			character.moveNorth(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.S)&& ableToMove){
+		else if(Gdx.input.isKeyPressed(Input.Keys.S)&& gameState.isStartMovingPerms()){
 			character.moveSouth(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.D)&& ableToMove){
+		else if(Gdx.input.isKeyPressed(Input.Keys.D)&& gameState.isStartMovingPerms()){
 			character.moveEast(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.A)&& ableToMove){
+		else if(Gdx.input.isKeyPressed(Input.Keys.A)&& gameState.isStartMovingPerms()){
 			character.moveWest(batch);
 		}
-		else if(Gdx.input.isKeyPressed(Input.Keys.E) && ableToMove) {
-			if(character.getGameState() == Character.GameRooms.ONE) {
+		else if(Gdx.input.isKeyPressed(Input.Keys.E) && gameState.isStartMovingPerms()) {
+			if(gameState.getGameState() == GameState.GameRooms.ONE) {
 				if(character.getCollisionRect().collidesWith(cat.getCollisionRect())) {
+					cat.getCatSound().play(5);
 					cat.getCatDialog().show(stage);
 				}
 			}
-			else if(character.getGameState() == Character.GameRooms.TWO) {
+			else if(gameState.getGameState() == GameState.GameRooms.TWO) {
 				if(character.getCollisionRect().collidesWith(collisionRectRoom2)) {
 					endDialog.show(stage);
 				}
@@ -226,7 +240,7 @@ public class MyGdxGame extends ApplicationAdapter {
 	public void dispose () {
 		batch.dispose();
 		background1.dispose();
-		sound.dispose();
+		startupSound.dispose();
 		stage.dispose();
 	}
 }

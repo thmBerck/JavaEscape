@@ -5,13 +5,15 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 import org.w3c.dom.Text;
 
 import java.util.HashMap;
 
 public class Character {
-    enum GameRooms {ONE, TWO, THREE}
-    private GameRooms gameState;
+
+
     private final Texture textureFront = new Texture(Gdx.files.internal("Character/frontside.gif"));
     private final Texture textureBehind = new Texture(Gdx.files.internal("Character/backside.gif"));
     private final Texture textureLeft = new Texture(Gdx.files.internal("Character/leftview.gif"));
@@ -21,8 +23,7 @@ public class Character {
 
     private final CollisionRect collisionRect = new CollisionRect(this.x, this.y, width, height);
 
-    private int x;
-    private int y;
+    private int x, y;
     int xSpeed;
     int ySpeed;
     public Character(int charSpeedX, int charSpeedY) {
@@ -62,9 +63,6 @@ public class Character {
         batch.draw(textureRight, x, y);
         collisionRect.move(x, y);
     }
-
-
-
     public int getX()
     {
         return x;
@@ -79,16 +77,14 @@ public class Character {
         return collisionRect;
     }
 
-    public GameRooms getGameState()
+    public void setX(int x)
     {
-        return gameState;
+        this.x = x;
     }
 
-    public void setGameState(GameRooms gameState)
+    public void setY(int y)
     {
-        this.gameState = gameState;
+        this.y = y;
     }
-
-
 
 }
